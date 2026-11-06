@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drift Boards and Easels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Kalam:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+/* Drift's paper world: plum sidebar, dotted paper boards, yellow notes, red string, one blue accent.
+   Layout: chapter rail, a scaled browser window that plays the story, the caption, then the rules at rest. */
+--paper:#f2f0ea;--panel:#fbfaf7;--ink:#24262b;--muted:#6f7178;--line:#d6d2c7;
+--plum:#2b2440;--blue:#2f5bd2;--note:#fbea86;--green:#3b8a4f;--string:#b8402f;
+--ui:"Atkinson Hyperlegible",ui-sans-serif,system-ui,-apple-system,sans-serif;
+--serif:"Source Serif 4",Georgia,serif;
+--hand:"Kalam","Bradley Hand",cursive;
+color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.45}
+.app{max-width:1152px;margin:0 auto;padding:24px 16px 56px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--hand);font-size:42px;line-height:1;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:72ch}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.rail{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rail ol{display:flex;gap:6px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
+.rail button{background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13.5px;cursor:pointer}
+.rail button:hover{border-color:var(--muted)}
+.rail button[aria-current="step"]{border-color:var(--ink);font-weight:700;background:#fff}
+.rail button span{color:var(--blue);font-weight:700;margin-right:5px}
+#play{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700;min-width:84px}
+.fit{position:relative;width:100%}
+.win{position:absolute;left:0;top:0;width:1120px;height:680px;transform-origin:0 0;border:2px solid var(--ink);border-radius:16px;overflow:hidden;background:var(--plum);user-select:none}
+
+/* sidebar */
+.side{position:absolute;left:0;top:0;bottom:0;width:232px;padding:12px 10px;color:#e9e6f5;font-size:12.5px;display:flex;flex-direction:column;gap:5px;z-index:4}
+.lights{display:flex;gap:6px;padding:2px 2px 6px}
+.lights i{width:11px;height:11px;border-radius:50%;background:#ff5f57}
+.lights i+i{background:#febc2e}.lights i+i+i{background:#28c840}
+.search{display:flex;gap:7px;align-items:center;background:rgba(255,255,255,.1);border-radius:8px;padding:7px 9px;color:#cfc9e6;white-space:nowrap}
+.search.focus{background:#fff;color:var(--ink);box-shadow:0 0 0 2px var(--blue)}
+.search .mag{width:11px;height:11px;border:1.8px solid currentColor;border-radius:50%;position:relative;flex:none;opacity:.8}
+.search .mag::after{content:"";position:absolute;width:5px;height:1.8px;background:currentColor;right:-5px;bottom:-2px;transform:rotate(45deg)}
+.search #q{flex:1;overflow:hidden;text-overflow:ellipsis}
+kbd{font:700 10.5px var(--ui);border-radius:4px;padding:1px 5px;background:rgba(255,255,255,.14);color:#cfc9e6}
+.search.focus kbd{background:#eee;color:var(--muted)}
+.newtab{display:flex;gap:8px;align-items:center;padding:6px 9px;border-radius:8px;color:#fff;font-weight:700}
+.newtab .plus{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;background:rgba(255,255,255,.18);font-size:14px;line-height:1}
+.newtab kbd{margin-left:auto}
+.newtab.hov{background:rgba(255,255,255,.12)}
+.gh{margin:9px 2px 2px;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#a9a2c9}
+.empty{color:#8f88b3;font-size:11.5px;padding:2px 8px}
+.row,.brow,.bun{display:flex;gap:7px;align-items:center;padding:5px 8px;border-radius:7px;color:#d8d3ee;white-space:nowrap}
+.tt{flex:1;overflow:hidden;text-overflow:ellipsis}
+.row .x{opacity:0;font-size:13px}
+.row.hov,.brow.hov,.bun.hov{background:rgba(255,255,255,.1)}
+.row.on,.brow.on{background:rgba(255,255,255,.18);color:#fff}
+.row.ind{margin-left:22px}
+.brow{font-weight:700;color:#efeaff}
+.brow i{width:11px;height:11px;border-radius:3px;flex:none}
+.brow em,.bun em{font-style:normal;font-weight:400;color:#a9a2c9;font-size:11px}
+.brow .badge{font-style:normal;font-size:10.5px;font-weight:700;color:#173d22;background:#a6e3a1;border-radius:999px;padding:0 6px}
+.kids{display:flex;flex-direction:column;gap:2px}
+.bun{margin-left:14px;color:#cfc9e6}
+.bun .car{width:10px;color:#a9a2c9}
+.fav{flex:none;width:16px;height:16px;border-radius:4px;display:grid;place-items:center;font:700 9px var(--ui);color:#fff}
+.etile{position:relative;margin:3px 0 4px 14px;padding:7px 10px 8px;border-radius:8px;background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:margin .15s,border-radius .15s,padding .15s}
+.etile .ek{display:flex;gap:6px;align-items:center;font-weight:700;font-size:12.5px}
+.etile .ek::before{content:"";width:12px;height:10px;border:1.6px solid var(--ink);border-radius:2px;border-bottom-width:3px}
+.etile .ep{display:block;color:var(--muted);font-size:11.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.etile.joined{margin-right:-10px;border-radius:8px 0 0 8px;padding-right:20px;box-shadow:none}
+.pop{animation:pop .45s ease-out}
+
+/* stage */
+.stage{position:absolute;left:232px;top:8px;width:880px;height:664px;border-radius:10px;overflow:hidden;background:#fff}
+.stage.split{background:var(--plum)}
+.view{position:absolute;left:0;top:0;width:880px;height:664px;visibility:hidden;transform-origin:0 0;overflow:hidden;border-radius:10px;background:#fff}
+.view.on{visibility:visible;z-index:1}
+.view.top{visibility:visible;z-index:3}
+.stage.split #page{width:520px}
+#page{transition:width .45s cubic-bezier(.3,.7,.2,1)}
+.dots{background:radial-gradient(rgba(0,0,0,.09) 1px,transparent 1.5px) 0 0/22px 22px,#f6f4ee}
+
+/* new tab desk */
+.hello{position:absolute;left:32px;top:26px}
+.hello b{display:block;font:700 34px/1.1 var(--hand)}
+.hello span{color:var(--muted);font-size:14px}
+.blabel{position:absolute;left:32px;top:112px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.boards{position:absolute;left:32px;right:32px;top:136px;display:flex;gap:28px}
+.bthumb{width:250px}
+.mini{position:relative;width:250px;height:188px;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.08)}
+.minin{position:absolute;left:0;top:0;width:880px;height:664px;transform:scale(.2841);transform-origin:0 0}
+.bname{display:flex;gap:7px;align-items:center;font-weight:700;margin-top:10px}
+.bname i{width:10px;height:10px;border-radius:3px}
+.bmeta{color:var(--muted);font-size:12.5px}
+.dock{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:9px;padding:8px 12px;border-radius:16px;background:rgba(255,255,255,.8);box-shadow:0 6px 20px rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.06);z-index:4}
+.ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:#fff;font:700 15px var(--ui)}
+.board .dock{bottom:12px;padding:6px 10px;gap:8px}
+.board .ic{width:34px;height:34px;border-radius:9px;font-size:13px}
+
+/* web pages */
+.sh{display:flex;gap:14px;align-items:center;padding:14px 22px;border-bottom:1px solid #eceae4}
+.sh b{font-size:16px}
+.sbox{flex:1;background:#f1efe9;border-radius:999px;padding:7px 14px;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow{display:grid;grid-template-columns:140px 1fr 64px;gap:12px;padding:12px 22px;border-bottom:1px solid #f0eee9;font-size:14px;color:#55575e}
+.mrow b{font-weight:700;color:var(--ink)}
+.mrow i{font-style:normal;text-align:right;color:var(--muted);font-size:12.5px}
+.sbody{padding:22px 28px;display:flex;flex-direction:column;gap:12px;font-family:var(--serif);font-size:17px;line-height:1.6}
+.sbody h3{font:600 28px/1.2 var(--serif);margin:4px 0 0;text-wrap:balance}
+.sbody p{margin:0;max-width:62ch}
+.res{font-family:var(--ui);display:flex;flex-direction:column;gap:2px}
+.res a{color:var(--blue);font-size:17px;font-weight:700}
+.res small{color:#3b8a4f;font-size:12.5px}
+.res span{color:#4a4c53;font-size:14px}
+.meta{font-family:var(--ui);font-size:13.5px;color:var(--muted)}
+.lnk{color:var(--blue);font-weight:700;text-decoration:underline;text-underline-offset:3px;font-family:var(--ui);font-size:15px}
+.sel{background-image:linear-gradient(#b9d0ff,#b9d0ff);background-size:0% 100%;background-repeat:no-repeat;transition:background-size .7s linear}
+.sel.on{background-size:100% 100%}
+.hero{height:150px;border-radius:12px;background:radial-gradient(ellipse 7% 30% at 44% 50%,#3f8a4a 98%,transparent),radial-gradient(ellipse 6% 26% at 52% 36%,#2f7a3e 98%,transparent),radial-gradient(ellipse 7% 24% at 59% 56%,#4f9a55 98%,transparent),linear-gradient(90deg,transparent 42%,#9a6a45 42% 58%,transparent 58%) 0 100%/100% 24% no-repeat,linear-gradient(#efe9da,#e1d9c4)}
+
+/* board */
+.bhead{position:absolute;left:0;top:0;right:0;height:48px;display:flex;gap:8px;align-items:center;padding:0 14px 0 18px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.75);font-weight:700;z-index:6}
+.bhead i{width:11px;height:11px;border-radius:3px;background:var(--green)}
+.bhead span{font-weight:400;color:var(--muted);font-size:12.5px}
+.folders{margin-left:auto;display:flex;gap:7px;align-items:center;font-weight:700;font-size:12.5px;padding:6px 10px;border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16)}
+.folders.hov{box-shadow:0 0 0 2px var(--blue)}
+.fold{width:16px;height:12px;border-radius:2px;background:#5b9be8;position:relative}
+.fold::before{content:"";position:absolute;left:0;top:-3px;width:7px;height:4px;border-radius:2px 2px 0 0;background:#5b9be8}
+.items{position:absolute;inset:0}
+.strings{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.strings path{fill:none;stroke:var(--string);stroke-width:1.7;opacity:.8}
+.strings circle{fill:var(--string)}
+.it{position:absolute}
+.goal{background:var(--note);padding:11px 13px 13px;box-shadow:0 3px 8px rgba(0,0,0,.18);transform:rotate(-1.2deg);font-family:var(--hand);color:#3a3110}
+.gk{font:700 10px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:#8a7420}
+.goal .gt{font-size:19px;line-height:1.15;margin:2px 0 7px;font-weight:700}
+.goal ul{margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.goal li{list-style:none;display:flex;gap:7px;align-items:center;font-size:15px}
+.goal li i{flex:none;width:13px;height:13px;border:1.6px solid #6b5a14;border-radius:3px}
+.goal li.done{text-decoration:line-through;color:#8f7f45}
+.goal li.done i{background:#6b5a14}
+.photo{background:#fff;padding:7px 7px 6px;box-shadow:0 2px 6px rgba(0,0,0,.2);transform:rotate(-3deg);width:136px}
+.photo .ph{height:112px;background:radial-gradient(ellipse 22% 30% at 34% 46%,#3f8a4a 98%,transparent),radial-gradient(ellipse 18% 26% at 62% 34%,#2f7a3e 98%,transparent),radial-gradient(ellipse 20% 24% at 60% 62%,#4f9a55 98%,transparent),linear-gradient(transparent 76%,#a9714a 76%),linear-gradient(#ebe5d4,#d8cfb8)}
+.photo span{display:block;font:14px var(--hand);text-align:center;margin-top:3px}
+.note{width:118px;padding:9px 11px;background:var(--note);font:15px/1.2 var(--hand);color:#3a3110;box-shadow:0 2px 5px rgba(0,0,0,.18);transform:rotate(var(--r,0deg))}
+.easel{width:286px}
+.easel .paper{position:relative;z-index:2;height:296px;padding:16px 16px 12px;background:#fff;border-radius:3px;box-shadow:0 3px 10px rgba(0,0,0,.18);overflow:hidden}
+.easel .clip{position:absolute;z-index:3;left:50%;top:-7px;width:56px;height:14px;margin-left:-28px;border-radius:3px;background:#7a5a3a}
+.easel .legs{position:absolute;left:0;right:0;top:280px;height:110px;z-index:1}
+.easel .legs i{position:absolute;top:0;width:8px;height:110px;border-radius:3px;background:linear-gradient(90deg,#a87b4f,#8a6038)}
+.easel .legs i:nth-child(1){left:52px;transform:rotate(9deg);transform-origin:top}
+.easel .legs i:nth-child(2){right:52px;transform:rotate(-9deg);transform-origin:top}
+.easel .legs i:nth-child(3){left:139px;height:96px;opacity:.6}
+.easel .legs b{position:absolute;left:36px;right:36px;top:22px;height:7px;border-radius:3px;background:#8a6038}
+.ez h4,.ebody h4{margin:0 0 6px;font:700 20px var(--hand)}
+.ez .ek2{font:700 10px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.ez p,.ebody p{margin:0 0 6px;padding-left:12px;position:relative;font-size:13px;line-height:1.35}
+.ez p::before,.ebody p::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--ink)}
+.ez blockquote,.ebody blockquote{margin:6px 0;padding:6px 10px;border-left:3px solid var(--green);background:#f1f6f0;font:italic 13px/1.35 var(--serif)}
+.ez cite,.ebody cite{display:block;font:normal 11px var(--ui);color:var(--green);margin-top:2px}
+.ebody p{font-size:15px;padding-left:14px}
+.ebody p::before{top:9px}
+.ebody blockquote{font-size:15px}
+.ebody cite{font-size:12px}
+.caret{display:inline-block;width:2px;height:15px;background:var(--ink);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite}
+.bundle{width:232px;background:#fff;border-radius:10px;box-shadow:0 1px 0 #fff,0 3px 0 -1px #e7e4dc,0 3px 0 0 rgba(0,0,0,.08),0 6px 0 -2px #dedad0,0 6px 0 -1px rgba(0,0,0,.08),0 8px 14px rgba(0,0,0,.1),inset 0 0 0 .5px rgba(0,0,0,.14);padding:4px 0 6px}
+.bundle .bh{display:flex;justify-content:space-between;align-items:center;padding:4px 11px 5px;font-weight:700;font-size:12.5px}
+.bundle .bh em{font-style:normal;font-size:11px;color:var(--muted);background:#f1efe9;border-radius:999px;padding:0 7px}
+.bl{display:flex;gap:7px;align-items:center;padding:3px 11px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#3b3d44}
+.bl.hov{background:#eef2fd;color:var(--blue)}
+.bundle.hov{box-shadow:0 0 0 2px var(--blue),0 8px 14px rgba(0,0,0,.12)}
+.quote{width:244px;padding:9px 12px;background:#fff;border-left:4px solid var(--green);box-shadow:0 2px 6px rgba(0,0,0,.14);font:italic 13px/1.35 var(--serif)}
+.quote span{display:block;font:normal 11px var(--ui);color:var(--green);margin-top:3px}
+.shelf{position:absolute;left:18px;right:18px;top:452px;height:122px;border-radius:12px;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(0,0,0,.07);padding:8px 14px}
+.shelf .shh{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px}
+.shelf .files{display:flex;gap:26px;align-items:flex-end;margin-top:6px;height:94px}
+.file{display:flex;flex-direction:column;align-items:center;gap:4px;width:92px}
+.file span{font-size:11px;text-align:center;line-height:1.2;color:#3b3d44;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg{position:relative;width:52px;height:66px;background:#fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.22);overflow:hidden;padding:13px 7px 0}
+.pg::before{content:"";position:absolute;right:0;top:0;width:13px;height:13px;background:linear-gradient(225deg,var(--paper) 50%,#ddd8cc 50%)}
+.pg i{display:block;height:3px;background:#dcd9d2;border-radius:2px;margin-bottom:4px}
+.pg i:nth-child(2n){width:70%}
+.pg .band{position:absolute;left:0;bottom:7px;font:700 9px var(--ui);color:#fff;padding:1px 5px;border-radius:0 2px 2px 0}
+.pg .pic{height:16px;border-radius:2px;margin-bottom:4px;background:linear-gradient(135deg,#5c9a5f,#b9d8a8)}
+.pg.xls{padding:12px 6px 0;background:#fff linear-gradient(#cfe5d3 0 0) 6px 12px/40px 1px}
+.pg.xls i{height:6px;border-radius:0;background:repeating-linear-gradient(90deg,#e7efe8 0 12px,#cfe5d3 12px 13px);margin-bottom:2px;width:100%}
+.photofile{width:74px;height:58px;background:#fff;padding:4px;box-shadow:0 1px 4px rgba(0,0,0,.22);transform:rotate(-4deg)}
+.photofile div{height:100%;background:radial-gradient(ellipse 22% 30% at 36% 48%,#3f8a4a 98%,transparent),radial-gradient(ellipse 18% 28% at 64% 36%,#2f7a3e 98%,transparent),linear-gradient(transparent 74%,#a9714a 74%),linear-gradient(#ebe5d4,#d8cfb8)}
+.fpanel{position:absolute;right:14px;top:54px;width:270px;z-index:7;background:#fff;border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.22),inset 0 0 0 1px rgba(0,0,0,.08);padding:10px;display:none;font-size:12.5px}
+.fpanel.on{display:block;animation:pop .3s ease-out}
+.fpanel .fh{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 4px 6px}
+.fpanel .locs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.fpanel .locs b{font-weight:400;padding:3px 8px;border-radius:999px;background:#f1efe9}
+.fpanel .locs b.on{background:var(--ink);color:#fff;font-weight:700}
+.frow{display:flex;gap:8px;align-items:center;padding:6px 6px;border-radius:7px}
+.frow.hov{background:#eef2fd}
+.frow .mk{font:700 8.5px var(--ui);color:#fff;border-radius:2px;padding:1px 4px}
+
+/* easel panel from the sidebar, and the split pane */
+.epop{position:absolute;left:232px;top:246px;width:430px;height:400px;z-index:5;background:#fff;border-radius:0 12px 12px 12px;box-shadow:12px 14px 34px rgba(0,0,0,.28);clip-path:inset(0 100% 0 0);transition:clip-path .32s cubic-bezier(.3,.7,.2,1);color:var(--ink)}
+.epop.on{clip-path:inset(-40px -40px -40px 0)}
+.eph{display:flex;gap:8px;align-items:center;padding:12px 16px 10px;border-bottom:1px solid #eeebe4}
+.eph b{flex:1;font-size:14px}
+.ebtn{font-size:12px;font-weight:700;padding:4px 9px;border-radius:7px;background:#f1efe9;white-space:nowrap}
+.ebtn.hov{background:var(--blue);color:#fff}
+.ebody{padding:14px 18px;overflow:hidden}
+.epane{position:absolute;left:528px;top:0;width:352px;height:664px;border-radius:10px;background:#fff;visibility:hidden;z-index:2;opacity:0;transform:translateX(30px);transition:opacity .35s,transform .45s cubic-bezier(.3,.7,.2,1)}
+.stage.split .epane{visibility:visible;opacity:1;transform:none}
+
+/* overlays */
+.fx{position:absolute;inset:0;pointer-events:none;z-index:55}
+.flyer{position:absolute;transform-origin:0 0;margin:0;overflow:hidden}
+.rip{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid var(--blue);animation:rip .45s ease-out forwards}
+.hint{position:absolute;left:672px;top:58px;z-index:60;transform:translate(-50%,-8px);opacity:0;transition:opacity .2s,transform .2s;background:var(--ink);color:#fff;border-radius:999px;padding:6px 14px;font-size:13px;white-space:nowrap}
+.hint.on{opacity:1;transform:translate(-50%,0)}
+.hint kbd{background:rgba(255,255,255,.18);color:#fff;margin-right:6px}
+.cursor{position:absolute;left:0;top:0;z-index:80;width:22px;height:26px;margin:-2px 0 0 -2px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.cursor.down path{fill:#dfe6fb}
+@keyframes pop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.05);opacity:1}100%{transform:scale(1)}}
+@keyframes rip{from{opacity:1;transform:scale(.4)}to{opacity:0;transform:scale(1.4)}}
+@keyframes blink{50%{opacity:0}}
+
+/* caption + rules */
+.cap{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:baseline;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:14px 18px}
+.cap .num{font:700 26px var(--hand);color:var(--blue);grid-row:span 2}
+.cap h2{margin:0;font-size:18px}
+.cap p{margin:0;color:#45474e;max-width:75ch}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.rules div{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:14px 18px}
+.rules h3{margin:0 0 4px;font:700 22px/1.15 var(--hand)}
+.rules p{margin:0;color:#45474e;font-size:14.5px}
+@media (max-width:820px){.rules{grid-template-columns:1fr}.cap{grid-template-columns:1fr}.cap .num{grid-row:auto}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <h1>Drift boards and easels</h1>
+    <p class="lede">New tabs never need a board. Boards hold bundles of links tied with string to the ideas on an easel, plus notes, photos, quotes and the files you saved. The easel is one hover away from any page in the board. Press play, or pick a chapter.</p>
+  </header>
+  <nav class="rail" aria-label="Chapters"><button id="play" type="button">Pause</button><ol id="chapters"></ol></nav>
+
+  <div class="fit" id="fit">
+    <div class="win" id="win" role="img" aria-label="Animated Drift prototype">
+      <aside class="side">
+        <div class="lights"><i></i><i></i><i></i></div>
+        <div class="search" id="search"><span class="mag"></span><span id="q">Search or type a site</span><kbd>⌘L</kbd></div>
+        <div class="newtab" id="newtab"><span class="plus">+</span>New tab<kbd>⌘T</kbd></div>
+        <div id="groups"></div>
+      </aside>
+      <div class="stage" id="stage">
+        <section class="view desk dots" id="desk">
+          <div class="hello"><b>Good afternoon</b><span>Friday, November 6</span></div>
+          <div class="blabel">Your boards</div>
+          <div class="boards" id="boards"></div>
+          <div class="dock dk"></div>
+        </section>
+        <section class="view page" id="page"></section>
+        <section class="view board dots" id="board">
+          <div class="bhead"><i></i>Plants <span id="bsub"></span><div class="folders" id="folders"><span class="fold"></span>On this Mac</div></div>
+          <div class="items" id="items"></div>
+          <div class="fpanel" id="fpanel">
+            <div class="fh">On this Mac</div>
+            <div class="locs"><b class="on">Documents</b><b>Desktop</b><b>Downloads</b><b>iCloud Drive</b></div>
+            <div class="frow" id="frowRec"><span class="mk" style="background:#c8453b">PDF</span>plant-receipts.pdf</div>
+            <div class="frow"><span class="mk" style="background:#2f5bd2">DOC</span>essay-draft.docx</div>
+            <div class="frow"><span class="mk" style="background:#c8453b">PDF</span>lease-2026.pdf</div>
+          </div>
+          <div class="dock dk"></div>
+        </section>
+        <section class="epane" id="epane"><div class="eph"><b>Plants easel</b><span class="ebtn">Close</span></div><div class="ebody" id="epaneBody"></div></section>
+      </div>
+      <div class="epop" id="epop"><div class="eph"><b>Plants easel</b><span class="ebtn" id="btnSplit">Side by side</span><span class="ebtn">Open board</span></div><div class="ebody" id="epopBody"></div></div>
+      <div class="hint" id="hint"></div>
+      <div class="fx" id="fx"></div>
+      <svg class="cursor" id="cursor" viewBox="0 0 22 26" aria-hidden="true"><path d="M2 2 L2 21 L7 16.5 L10.5 24 L13.8 22.6 L10.4 15.2 L17 15.2 Z" fill="#fff" stroke="#24262b" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+
+  <section class="cap" aria-live="polite"><span class="num" id="capNum">1</span><h2 id="capTitle"></h2><p id="capText"></p></section>
+
+  <section class="rules" aria-label="How it works">
+    <div><h3>New tab, no board needed</h3><p>Search and New tab always sit at the top of the sidebar. A new tab lands under Today, outside any board.</p></div>
+    <div><h3>Boards open in place</h3><p>Boards are listed in the sidebar. Open one and its easel and link bundles appear under it.</p></div>
+    <div><h3>The easel, one hover away</h3><p>Hover the easel tile and it slides out, joined to the sidebar. Write, move away, and it tucks back. Pin it for split view.</p></div>
+    <div><h3>Bundles, tied with string</h3><p>Links come in compact bundles. String ties each bundle to the easel idea it supports.</p></div>
+    <div><h3>Files live on the board</h3><p>Downloads made inside a board land on its shelf above the dock. The On this Mac button brings in files from your folders.</p></div>
+    <div><h3>Loose tabs join later</h3><p>Drag any tab from Today onto a board's name and Drift files it into the right bundle.</p></div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const W=1120,H=680,win=$('#win'),fit=$('#fit'),stage=$('#stage'),fx=$('#fx'),cursorEl=$('#cursor'),epop=$('#epop');
+const V={desk:$('#desk'),page:$('#page'),board:$('#board')};
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let S=1;function scale(){S=Math.min(1,fit.clientWidth/W);win.style.transform=`scale(${S})`;fit.style.height=H*S+'px';}
+addEventListener('resize',scale);scale();
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* ---------- content ---------- */
+const T={inbox:{id:'inbox',t:'Inbox (3)',f:'M',c:'#c8453b'},nt:{id:'nt',t:'New tab',f:'+',c:'#6f7178'},grow:{id:'grow',t:'Grow lights for winter',f:'G',c:'#d9822b'}};
+const BOARDS=[{id:'plants',n:'Plants',c:'#3b8a4f'},{id:'lisbon',n:'Lisbon trip',c:'#1f8a7a',k:5},{id:'bio',n:'Bio lab write-up',c:'#3d7be0',k:6}];
+const BUNDLES=[
+ {id:'water',name:'Watering & soil',x:612,y:60,links:[{id:'w1',t:'Watering in winter',f:'W',c:'#3b8a4f'},{id:'w2',t:'Best soil mixes',f:'S',c:'#8a6a3b'},{id:'w3',t:'Signs of overwatering',f:'O',c:'#2f5bd2'}]},
+ {id:'light',name:'Light',x:612,y:176,links:[{id:'l1',t:'Low-light plants',f:'L',c:'#d9822b'},{id:'l2',t:'Window direction guide',f:'D',c:'#7a5bd2'}]},
+ {id:'shop',name:'Where to buy',x:612,y:270,links:[{id:'s1',t:'Local nursery',f:'N',c:'#1f8a7a'},{id:'s2',t:'Terracotta pots',f:'P',c:'#c8453b'},{id:'s3',t:'Humidifiers compared',f:'H',c:'#24262b'}]}];
+const EASEL0=[{k:'h',txt:'Winter plan'},{k:'li',id:'e1',txt:'Water less, every 10 to 14 days'},{k:'li',id:'e2',txt:'Move the fiddle fig off the radiator'},{k:'li',id:'e3',txt:'Find the monstera a brighter spot'}];
+const TYPED={k:'li',id:'e4',txt:'Check the soil 2 inches down before watering'};
+const QUOTE={k:'q',txt:'Let the top inch of soil dry out between waterings.',src:'From Watering in winter'};
+const FILES0=[{id:'img',k:'jpg',n:'monstera.jpg'},{id:'xls',k:'xls',n:'watering-schedule.xlsx'},{id:'doc',k:'doc',n:'plant-list.docx'}];
+const PDF={id:'pdf',k:'pdf',n:'winter-care-guide.pdf'},REC={id:'rec',k:'rec',n:'plant-receipts.pdf'};
+const DOCK=[['M','#c8453b'],['31','#2f5bd2'],['D','#3d7be0'],['♫','#d6457b'],['N','#24262b'],['C','#d9822b']];
+$$('.dk').forEach(d=>d.innerHTML=DOCK.map(([f,c])=>`<div class="ic" style="background:${c}">${f}</div>`).join(''));
+const PAGES={
+ mail:{html:`<div class="sh"><b>Mail</b><span class="sbox">Search mail</span></div>
+  <div class="mrow"><b>Mom</b><span>The fern loves the bathroom, try it there</span><i>1:12</i></div>
+  <div class="mrow"><b>Campus Housing</b><span>Your lease renewal window opens Monday</span><i>11:40</i></div>
+  <div class="mrow"><b>Dr. Okafor</b><span>Lab 4 rubric attached</span><i>9:05</i></div>
+  <div class="mrow"><b>Library</b><span>2 books due next week</span><i>Thu</i></div>`},
+ search:{html:`<div class="sh"><b>Search</b><span class="sbox">grow lights for winter</span></div><div class="sbody">
+  <div class="res"><a>Grow lights for winter: a beginner's guide</a><small>houseplants.example.com</small><span>Full-spectrum LED bars, how far to hang them, and how many hours a day.</span></div>
+  <div class="res"><a>Do houseplants need grow lights in winter?</a><small>gardening.example.org</small><span>Short days slow growth. Here is when a light helps and when it doesn't.</span></div>
+  <div class="res"><a>Best clip-on grow lights, tested</a><small>reviews.example.com</small><span>Seven lights under $40 on real plants for six weeks.</span></div></div>`},
+ water:{html:`<div class="sh"><b>Houseplant Journal</b><span class="sbox">houseplants.example.com/watering-in-winter</span></div><div class="sbody">
+  <div class="hero"></div><h3>Watering in winter</h3><div class="meta">6 min read · updated October 2026</div>
+  <p>Most houseplants rest in winter, so they drink far less. <span class="sel" id="sel">Let the top inch of soil dry out between waterings.</span> Push a finger in before you reach for the can.</p>
+  <p><a class="lnk" id="lnkPdf">Download the winter care guide (PDF)</a></p></div>`}};
+const URL={mail:'mail.example.com',search:'grow lights for winter',water:'houseplants.example.com',none:''};
+
+/* ---------- state + render ---------- */
+let st={};
+const allLinks=()=>st.bundles.flatMap(b=>b.links);
+function easelHTML(){return st.easel.map(l=>l.k==='h'?`<h4>${l.txt}</h4>`:l.k==='q'?`<blockquote>${l.txt}<cite>${l.src}</cite></blockquote>`:`<p data-line="${l.id}">${l.txt}</p>`).join('');}
+function fileHTML(f){
+  const pg=(band,col,pic,cls='')=>`<div class="pg ${cls}">${pic?'<div class="pic"></div>':''}<i></i><i></i><i></i><i></i><i></i><b class="band" style="background:${col}">${band}</b></div>`;
+  const icon=f.k==='jpg'?`<div class="photofile"><div></div></div>`:f.k==='xls'?pg('XLS','#1f7a45','', 'xls'):f.k==='doc'?pg('DOC','#2f5bd2'):pg('PDF','#c8453b',f.k==='pdf');
+  return `<div class="file" data-file="${f.id}">${icon}<span>${f.n}</span></div>`;}
+function boardHTML(){
+  const b=st.bundles.map(bu=>`<div class="it bundle" data-b="${bu.id}" style="left:${bu.x}px;top:${bu.y}px"><div class="bh"><span>${bu.name}</span><em>${bu.links.length}</em></div>${bu.links.map(l=>`<div class="bl" data-link="${l.id}"><span class="fav" style="background:${l.c}">${l.f}</span>${l.t}</div>`).join('')}</div>`).join('');
+  return `<svg class="strings" id="strings" width="880" height="664"></svg>
+  <div class="it goal" style="left:24px;top:60px;width:208px"><div class="gk">Goal</div><div class="gt">Keep all 6 plants alive this winter</div><ul><li class="done"><i></i>Find a watering rhythm</li><li><i></i>Fix the light</li><li><i></i>Buy a humidifier</li></ul></div>
+  <div class="it photo" id="photo" style="left:26px;top:238px"><div class="ph"></div><span>Monstera</span></div>
+  <div class="it note" style="left:150px;top:362px;--r:3deg">Ask Mom how she keeps her fern happy</div>
+  <div class="it easel" id="easel" style="left:270px;top:58px"><div class="clip"></div><div class="paper ez"><div class="ek2">Easel</div>${easelHTML()}</div><div class="legs"><i></i><i></i><i></i><b></b></div></div>
+  ${b}
+  <div class="it quote" style="left:612px;top:384px">Most houseplants die from too much water, not too little.<span>From Signs of overwatering</span></div>
+  <div class="shelf"><div class="shh">Saved to this board <span id="fcount">· ${st.files.length} files</span></div><div class="files" id="files">${st.files.map(fileHTML).join('')}</div></div>`;}
+function drawStrings(){
+  const it=$('#items'),o=it.getBoundingClientRect(),svg=$('#items .strings');if(!svg)return;
+  const R=el=>{const r=el.getBoundingClientRect();return{x:(r.left-o.left)/S,y:(r.top-o.top)/S,w:r.width/S,h:r.height/S};};
+  const pairs=[[`#items [data-b="water"]`,'e1','L'],[`#items [data-b="light"]`,'e2','L'],['#items .photo','e3','R']];let h='';
+  for(const [sel,line,side] of pairs){const a=$(sel),b=$(`#items .easel [data-line="${line}"]`);if(!a||!b)continue;const ra=R(a),rb=R(b);
+    const p1=side==='L'?{x:ra.x,y:ra.y+16}:{x:ra.x+ra.w-6,y:ra.y+30};
+    const p2=side==='L'?{x:rb.x+Math.min(rb.w,236)+4,y:rb.y+rb.h/2}:{x:rb.x-6,y:rb.y+rb.h/2};
+    const dx=(p2.x-p1.x)/2;h+=`<path d="M${p1.x},${p1.y} C${p1.x+dx},${p1.y+28} ${p2.x-dx},${p2.y+28} ${p2.x},${p2.y}"/><circle cx="${p1.x}" cy="${p1.y}" r="3"/><circle cx="${p2.x}" cy="${p2.y}" r="3"/>`;}
+  svg.innerHTML=h;}
+function renderBoard(){$('#items').innerHTML=boardHTML();drawStrings();$('#bsub').textContent=`board · ${allLinks().length} links · ${st.files.length} files`;}
+function renderEasel(){$('#epopBody').innerHTML=easelHTML();$('#epaneBody').innerHTML=easelHTML();}
+function miniStatic(goal,cols){return `<div class="it goal" style="left:24px;top:60px;width:208px"><div class="gk">Goal</div><div class="gt">${goal}</div></div>`+cols.map((c,k)=>`<div class="it bundle" style="left:${300+(k%2)*270}px;top:${70+Math.floor(k/2)*150}px"><div class="bh"><span>&nbsp;</span></div><div class="bl"><span class="fav" style="background:${c}"></span>&nbsp;</div><div class="bl"><span class="fav" style="background:${c}"></span>&nbsp;</div></div>`).join('')+`<div class="shelf"></div>`;}
+function renderDesk(){
+  const th=(id,n,c,inner,meta)=>`<div class="bthumb" id="th-${id}"><div class="mini dots"><div class="minin">${inner}</div></div><div class="bname"><i style="background:${c}"></i>${n}</div><div class="bmeta">${meta}</div></div>`;
+  $('#boards').innerHTML=th('plants','Plants','#3b8a4f',$('#items').innerHTML.replace(/ id="/g,' data-x="'),`${allLinks().length} links · easel · ${st.files.length} files`)+th('lisbon','Lisbon trip','#1f8a7a',miniStatic('Book Lisbon under $900',['#2f5bd2','#d9822b','#7a5bd2']),'5 links · easel · 2 files')+th('bio','Bio lab write-up','#3d7be0',miniStatic('Lab 4 due Monday',['#3d7be0','#3bb273','#7a5bd2','#d9822b']),'6 links · easel · 4 files');}
+function renderSide(){
+  const row=(t,ind)=>`<div class="row ${st.active===t.id?'on':''} ${ind?'ind':''}" data-tab="${t.id}"><span class="fav" style="background:${t.c}">${t.f}</span><span class="tt">${t.t}</span><span class="x">×</span></div>`;
+  let h=`<div class="gh">Today</div>`+(st.loose.length?st.loose.map(t=>row(t)).join(''):`<div class="empty">New tabs land here</div>`)+`<div class="gh">Boards</div>`;
+  for(const b of BOARDS){const open=st.open===b.id,k=b.id==='plants'?allLinks().length:b.k;
+    h+=`<div class="brow ${open&&st.active==='board'?'on':''}" data-board="${b.id}"><i style="background:${b.c}"></i><span class="tt">${b.n}</span>${b.id==='plants'&&st.badge?'<em class="badge">+1 file</em>':`<em>${k}</em>`}</div>`;
+    if(open){const n=st.easel.filter(l=>l.k!=='h').length;
+      h+=`<div class="kids"><div class="etile" id="etile"><span class="ek">Easel</span><span class="ep">Winter plan · ${n} ideas</span></div>`+
+      st.bundles.map(bu=>`<div class="bun" data-bun="${bu.id}"><span class="car">${st.exp===bu.id?'▾':'▸'}</span><span class="tt">${bu.name}</span><em>${bu.links.length}</em></div>`+(st.exp===bu.id?bu.links.map(l=>row(l,true)).join(''):'')).join('')+`</div>`;}}
+  $('#groups').innerHTML=h;}
+function setPage(k){st.page=k;V.page.innerHTML=PAGES[k]?PAGES[k].html:'';}
+function setView(v){st.view=v;Object.entries(V).forEach(([n,e])=>{e.classList.toggle('on',n===v);e.classList.remove('top');});
+  $('#q').textContent=v==='page'?URL[st.page]:v==='board'?'Plants · board':'Search or type a site';$('#search').classList.remove('focus');}
+function apply(s){
+  document.getAnimations().forEach(a=>{try{a.cancel()}catch(e){}});fx.innerHTML='';hint('');
+  st=clone(s);epop.classList.remove('on');$('#fpanel').classList.remove('on');
+  stage.classList.toggle('split',!!st.split);renderSide();setPage(st.page);renderBoard();renderDesk();renderEasel();setView(st.view);
+  placeCursor(st.cursor||{x:760,y:520});}
+
+/* ---------- motion helpers ---------- */
+let run=0,paused=false;const CANCEL={};
+function sleep(ms){const id=run;return new Promise((res,rej)=>{let left=RM?0:ms,last=performance.now();
+  (function tick(now){if(id!==run)return rej(CANCEL);if(!paused)left-=now-last;last=now;if(left<=0)return res();requestAnimationFrame(tick);})(last);});}
+let cx=760,cy=520;
+function placeCursor(p){cx=p.x;cy=p.y;cursorEl.style.transition='none';cursorEl.style.transform=`translate(${cx}px,${cy}px)`;}
+async function moveTo(p,ms=650){cx=p.x;cy=p.y;cursorEl.style.transition=`transform ${RM?0:ms}ms cubic-bezier(.3,.7,.2,1)`;cursorEl.style.transform=`translate(${cx}px,${cy}px)`;await sleep(ms+40);}
+function rectIn(el){const r=el.getBoundingClientRect(),w=win.getBoundingClientRect();return{x:(r.left-w.left)/S-2,y:(r.top-w.top)/S-2,w:r.width/S,h:r.height/S};}
+function pt(el,ax=.5,ay=.5){const r=rectIn(el);return{x:r.x+r.w*ax,y:r.y+r.h*ay};}
+async function click(){cursorEl.classList.add('down');const r=document.createElement('div');r.className='rip';r.style.left=cx+'px';r.style.top=cy+'px';fx.appendChild(r);setTimeout(()=>r.remove(),500);await sleep(170);cursorEl.classList.remove('down');await sleep(120);}
+let hintT;function hint(html,ms=1900){const h=$('#hint');clearTimeout(hintT);if(!html){h.classList.remove('on');return;}h.innerHTML=html;h.classList.add('on');hintT=setTimeout(()=>h.classList.remove('on'),RM?4000:ms);}
+async function fly(a,b,el,ms=700){el.classList.add('flyer');Object.assign(el.style,{left:a.x+'px',top:a.y+'px',width:a.w+'px',height:a.h+'px'});fx.appendChild(el);
+  el.animate([{transform:'none'},{transform:`translate(${b.x-a.x}px,${b.y-a.y}px) scale(${b.w/a.w},${b.h/a.h})`}],{duration:RM?0:ms,easing:'cubic-bezier(.45,0,.2,1)',fill:'forwards'});await sleep(ms);el.remove();}
+/* carry: an element follows the cursor to a point, like a drag */
+async function carry(el,a,to,ms=900){el.classList.add('flyer');Object.assign(el.style,{left:a.x+'px',top:a.y+'px',width:a.w+'px',height:a.h+'px',boxShadow:'0 12px 26px rgba(0,0,0,.28)',transform:'rotate(2deg)'});fx.appendChild(el);
+  const ox=cx-a.x,oy=cy-a.y;el.animate([{translate:'0 0'},{translate:`${to.x-cx}px ${to.y-cy}px`}],{duration:RM?0:ms,easing:'cubic-bezier(.3,.7,.2,1)',fill:'forwards'});
+  await moveTo(to,ms);el.remove();}
+function fromRect(el){const s=rectIn(stage),r=rectIn(el),k=r.w/s.w;return `translate(${r.x-s.x}px,${r.y-s.y+(r.h-s.h*k)/2}px) scale(${k})`;}
+async function zoomIn(v,el,ms=650){const tr=fromRect(el),E=V[v];E.classList.add('top');
+  E.animate([{transform:tr,opacity:.3,borderRadius:'40px'},{transform:'none',opacity:1,borderRadius:'10px'}],{duration:RM?0:ms,easing:'cubic-bezier(.3,.7,.2,1)'});await sleep(ms);setView(v);}
+async function fadeTo(v,ms=320){V[v].classList.add('top');V[v].animate([{opacity:0},{opacity:1}],{duration:RM?0:ms});await sleep(ms);setView(v);}
+async function type(el,txt,before='',after='',ms=48){let s='';for(const ch of txt){s+=ch;el.innerHTML=before+s+'<span class="caret"></span>'+after;await sleep(ms);}}
+function showPop(){const t=$('#etile');if(!t)return;t.classList.add('joined');const r=rectIn(t);epop.style.top=r.y+'px';renderEasel();epop.classList.add('on');}
+function hidePop(){epop.classList.remove('on');const t=$('#etile');if(t)t.classList.remove('joined');}
+const rowEl=id=>$(`#groups [data-tab="${id}"]`), brow=id=>$(`#groups [data-board="${id}"]`);
+
+/* ---------- chapters ---------- */
+const B0=()=>({view:'page',page:'mail',loose:[T.inbox],active:'inbox',open:null,exp:null,easel:EASEL0,files:FILES0,bundles:BUNDLES,split:false,badge:false,cursor:{x:760,y:520}});
+const CH=[
+ {title:'New tab, no board needed',text:'Search and New tab always sit at the top of the sidebar. A new tab lands under Today, outside any board, so you can just browse.',
+  start:B0,
+  async run(){const nt=$('#newtab');await moveTo(pt(nt,.4,.5),800);nt.classList.add('hov');await sleep(300);await click();nt.classList.remove('hov');
+    st.loose.push(clone(T.nt));st.active='nt';renderSide();rowEl('nt').classList.add('pop');hint('<kbd>⌘T</kbd>New tab, outside any board');await fadeTo('desk');
+    await sleep(700);const s=$('#search');await moveTo(pt(s,.4,.5),700);await click();s.classList.add('focus');
+    await type($('#q'),'grow lights for winter');await sleep(300);hint('<kbd>↵</kbd>Search');
+    st.loose[1]=clone(T.grow);st.active='grow';setPage('search');renderSide();await fadeTo('page');
+    await moveTo(pt(rowEl('grow'),.5,.5),700);rowEl('grow').classList.add('hov');await sleep(1300);rowEl('grow').classList.remove('hov');}},
+ {title:'Open a board',text:'Boards are listed under Boards. Open one and you see its easel in the middle, bundles of links tied to it with string, notes and photos around it, and the files you saved on the shelf above the dock.',
+  start:()=>({...B0(),loose:[T.inbox,T.grow],active:'grow',page:'search'}),
+  async run(){const b=brow('plants');await moveTo(pt(b,.4,.5),800);b.classList.add('hov');await sleep(300);await click();
+    st.open='plants';st.active='board';renderSide();$('#etile').classList.add('pop');await zoomIn('board',b,700);
+    await sleep(400);await moveTo(pt($('#easel .paper'),.5,.4),800);hint('The easel: your thinking for this board');await sleep(1500);
+    await moveTo(pt($('#items [data-b="water"]'),.5,.4),800);hint('Bundles keep links compact');await sleep(1400);
+    await moveTo(pt($('#items .strings path'),.5,.5),700);hint('String ties a bundle to the idea it supports');await sleep(1500);
+    await moveTo(pt($('#files .file:nth-child(1)'),.5,.4),800);hint('Files saved to this board');await sleep(1400);
+    await moveTo(pt($('#board .dock'),.5,.5),700);hint('Favorites stay in the dock');await sleep(1400);}},
+ {title:'Bundles hold the links',text:'A bundle stacks related links in one compact card. Open a link and the bundle unfolds under the board in the sidebar, so you always know where you are.',
+  start:()=>({...B0(),view:'board',loose:[T.inbox,T.grow],active:'board',open:'plants',page:'search'}),
+  async run(){const bu=$('#items [data-b="water"]');await moveTo(pt(bu,.5,.2),800);bu.classList.add('hov');await sleep(600);
+    const l=$('#items [data-link="w1"]');await moveTo(pt(l,.4,.5),500);l.classList.add('hov');await sleep(400);await click();
+    st.active='w1';st.exp='water';renderSide();setPage('water');hint('Opened from Watering & soil');await zoomIn('page',l,650);
+    await sleep(600);await moveTo(pt($('#groups [data-bun="water"]'),.5,.5),700);await sleep(700);await moveTo(pt(rowEl('w1'),.5,.5),500);await sleep(1300);}},
+ {title:'The easel, one hover away',text:'Hover the easel tile and it slides out from the sidebar, joined to it in one white surface. Move right and write. Move away and it tucks back.',
+  start:()=>({...B0(),loose:[T.inbox,T.grow],active:'w1',open:'plants',exp:'water',page:'water',cursor:{x:150,y:420}}),
+  async run(){const t=$('#etile');await moveTo(pt(t,.5,.5),800);showPop();hint('Hover the easel');await sleep(700);
+    const body=$('#epopBody');await moveTo({x:420,y:rectIn(body).y+190},700);await click();
+    st.easel.push({...TYPED,txt:''});const before=easelHTML().replace(/<p data-line="e4"><\/p>$/,'');
+    await type(body,TYPED.txt,before+'<p data-line="e4">','</p>');st.easel[st.easel.length-1].txt=TYPED.txt;renderEasel();renderSide();showPop();
+    await sleep(900);await moveTo({x:900,y:560},700);hidePop();hint('Move away and it tucks back');renderBoard();await sleep(1600);}},
+ {title:'Side by side',text:'Pin the easel next to the page for split view. Drag a sentence across and it lands as a quote that keeps its source.',
+  start:()=>({...B0(),loose:[T.inbox,T.grow],active:'w1',open:'plants',exp:'water',page:'water',easel:[...EASEL0,TYPED],cursor:{x:900,y:560}}),
+  async run(){await moveTo(pt($('#etile'),.5,.5),800);showPop();await sleep(500);const b=$('#btnSplit');await moveTo(pt(b),600);b.classList.add('hov');await sleep(250);await click();
+    b.classList.remove('hov');hidePop();st.split=true;stage.classList.add('split');renderEasel();hint('Split view: the page and your easel');await sleep(1100);
+    const s=$('#sel');await moveTo(pt(s,0,.5),700);cursorEl.classList.add('down');s.classList.add('on');await moveTo(pt(s,1,.5),700);await sleep(200);
+    const body=$('#epaneBody'),br=rectIn(body);const q=document.createElement('blockquote');q.style.cssText='margin:0;padding:6px 10px;border-left:3px solid var(--green);background:#f1f6f0;font:italic 14px/1.35 var(--serif)';q.textContent=QUOTE.txt;
+    const sr=rectIn(s);await carry(q,{x:sr.x,y:sr.y,w:300,h:44},{x:br.x+40,y:br.y+290},900);cursorEl.classList.remove('down');
+    st.easel.push({...QUOTE});renderEasel();$('#epaneBody blockquote').classList.add('pop');hint('The quote keeps its source');await sleep(1800);}},
+ {title:'Files live on the board',text:'Download something while you’re in a board and it lands on that board’s shelf, drawn like the real file. The On this Mac button opens your folders so you can drag files in.',
+  start:()=>({...B0(),loose:[T.inbox,T.grow],active:'w1',open:'plants',exp:'water',page:'water',easel:[...EASEL0,TYPED,QUOTE],split:true,cursor:{x:600,y:500}}),
+  async run(){const l=$('#lnkPdf');await moveTo(pt(l,.5,.5),800);await click();hint('Download');
+    const pg=document.createElement('div');pg.innerHTML=fileHTML(PDF);const ic=pg.firstElementChild.firstElementChild;const lr=rectIn(l);
+    const b=brow('plants');const target=rectIn(b);await fly({x:lr.x+lr.w/2-26,y:lr.y-30,w:52,h:66},{x:target.x+150,y:target.y-4,w:20,h:26},ic,800);
+    st.badge=true;renderSide();brow('plants').classList.add('pop');hint('Saved to the Plants board');await sleep(900);
+    await moveTo(pt(brow('plants'),.4,.5),700);await click();st.active='board';st.exp=null;st.badge=false;st.split=false;stage.classList.remove('split');
+    st.files.push(PDF);renderSide();renderBoard();$('#items [data-file="pdf"]').classList.add('pop');await zoomIn('board',brow('plants'),650);
+    await sleep(400);await moveTo(pt($('#items [data-file="pdf"]'),.5,.4),700);await sleep(900);
+    const f=$('#folders');await moveTo(pt(f),700);f.classList.add('hov');await click();f.classList.remove('hov');$('#fpanel').classList.add('on');hint('Your Mac’s folders, in the corner');await sleep(900);
+    const r=$('#frowRec');await moveTo(pt(r,.4,.5),600);r.classList.add('hov');cursorEl.classList.add('down');await sleep(200);
+    const shelfR=rectIn($('#files'));const chip=r.cloneNode(true);chip.style.background='#fff';chip.style.borderRadius='7px';
+    await carry(chip,rectIn(r),{x:shelfR.x+5*118+20,y:shelfR.y+30},1000);cursorEl.classList.remove('down');
+    $('#fpanel').classList.remove('on');st.files.push(REC);renderBoard();$('#items [data-file="rec"]').classList.add('pop');await sleep(1600);}},
+ {title:'Loose tabs join later',text:'Started browsing without a board? Drag the tab from Today onto a board’s name. Drift files it into the bundle it fits.',
+  start:()=>({...B0(),view:'board',loose:[T.inbox,T.grow],active:'board',open:'plants',page:'water',easel:[...EASEL0,TYPED,QUOTE],files:[...FILES0,PDF,REC],cursor:{x:700,y:500}}),
+  async run(){const r=rowEl('grow');await moveTo(pt(r,.4,.5),800);r.classList.add('hov');cursorEl.classList.add('down');await sleep(250);
+    const c=r.cloneNode(true);c.style.background='#3d3460';c.style.borderRadius='7px';r.style.opacity='.3';
+    await carry(c,rectIn(r),pt(brow('plants'),.45,.5),900);cursorEl.classList.remove('down');
+    st.loose=st.loose.filter(t=>t.id!=='grow');const lb=st.bundles.find(b=>b.id==='light');lb.links.push({id:'l3',t:'Grow lights for winter',f:'G',c:'#d9822b'});st.exp='light';
+    renderSide();renderBoard();rowEl('l3').classList.add('pop');$('#items [data-link="l3"]').classList.add('pop');hint('Drift put it in the Light bundle',2400);
+    await sleep(700);await moveTo(pt($('#items [data-link="l3"]'),.4,.5),900);$('#items [data-b="light"]').classList.add('hov');await sleep(2200);}}];
+
+/* ---------- player ---------- */
+const playBtn=$('#play');let ended=false;
+$('#chapters').innerHTML=CH.map((c,i)=>`<li><button type="button" data-i="${i}"><span>${i+1}</span>${c.title}</button></li>`).join('');
+$('#chapters').addEventListener('click',e=>{const b=e.target.closest('button');if(b){paused=false;playFrom(+b.dataset.i);}});
+playBtn.addEventListener('click',()=>{if(ended){paused=false;playFrom(0);return;}paused=!paused;playBtn.textContent=paused?'Play':'Pause';});
+async function playFrom(i){
+  const id=++run;ended=false;playBtn.textContent='Pause';
+  $$('#chapters button').forEach((b,j)=>j===i?b.setAttribute('aria-current','step'):b.removeAttribute('aria-current'));
+  $('#capNum').textContent=`${i+1}/${CH.length}`;$('#capTitle').textContent=CH[i].title;$('#capText').textContent=CH[i].text;
+  apply(CH[i].start());
+  try{await sleep(400);await CH[i].run();await sleep(1400);}catch(e){if(e!==CANCEL)console.error(e);return;}
+  if(id!==run)return;
+  if(i<CH.length-1&&!RM)playFrom(i+1);else{ended=true;playBtn.textContent='Replay';}}
+playFrom(0);
+</script>
+</body>
+</html>
